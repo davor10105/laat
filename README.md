@@ -1,6 +1,6 @@
 <p align="center">
 <img width="350" alt="License: GPL--3.0" src="laat_final_logo.png" />
-<h1 align="center"><b>L</b>arge Language Model <b>A</b>ligned <b>A</b>ttribution <b>T</b>raining (<b>LAAT</b>)</h1>
+<h1 align="center"><b>L</b>arge Language Model <b>A</b>ttribution <b>A</b>ligned <b>T</b>raining (<b>LAAT</b>)</h1>
 
 </p>
 <p>
