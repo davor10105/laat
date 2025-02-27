@@ -1,0 +1,15 @@
+{
+    "#DatasetTask#": "In the electricity market, prices are not fixed and are affected by demand and supply of the market. They are set every five minutes. Electricity transfers in the state A to/from the neighboring state B are done to alleviate fluctuations. Based on the current measurement, predict whether the price of electricity in state A will go up. Yes or no?",
+    "#DatasetClasses#": [
+        "no",
+        "yes"
+    ],
+    "Date": "Date of measurement, normalized between 0 and 1",
+    "Day": "Day of the week, 1 - 7",
+    "Period": "Half-hour segment of the day when the measurement was taken, normalized between 0 and 1",
+    "APrice": "State A price of electricity, normalized between 0 and 1",
+    "ADemand": "State A demand for electricity, normalized between 0 and 1",
+    "BPrice": "State B price of electricity, normalized between 0 and 1",
+    "BDemand": "State B demand for electricity, normalized between 0 and 1",
+    "ScheduledElectricityTransfer": "Scheduled electricity transfer between states A and B, normalized between 0 and 1"
+}

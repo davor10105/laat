@@ -1,0 +1,32 @@
+{
+    "#DatasetTask#": "Predict whether the coronary angiography of this patient show a heart disease? Yes or no?",
+    "#DatasetClasses#": [
+        "no",
+        "yes"
+    ],
+    "Age": "age of the patient",
+    "Sex": "sex of the patient",
+    "ChestPainType": "chest pain type",
+    "RestingBP": "resting blood pressure [mm Hg]",
+    "Cholesterol": "serum cholesterol [mm/dl]",
+    "FastingBS": "fasting blood sugar [1: if FastingBS > 120 mg/dl, 0: otherwise]",
+    "RestingECG": "resting electrocardiogram results",
+    "MaxHR": "maximum heart rate achieved",
+    "ExerciseAngina": "exercise-induced angina",
+    "Oldpeak": "oldpeak = ST [Numeric value measured in depression]",
+    "STSlope": "the slope of the peak exercise ST segment",
+    "Sex_Female": "whether the patient is female",
+    "Sex_Male": "whether the patient is male",
+    "ChestPainType_Asymptomatic": "whether the patient has asymptomatic chest pain",
+    "ChestPainType_AtypicalAngina": "whether the patient has atypical angina",
+    "ChestPainType_NonAnginalPain": "whether the patient has non-anginal chest pain",
+    "ChestPainType_TypicalAngina": "whether the patient has typical angina",
+    "RestingECG_LVH": "whether the patient has left ventricular hypertrophy on ECG",
+    "RestingECG_Normal": "whether the patient has a normal ECG",
+    "RestingECG_ST": "whether the patient has ST-T wave abnormalities on ECG",
+    "ExerciseAngina_No": "whether the patient does not have exercise-induced angina",
+    "ExerciseAngina_Yes": "whether the patient has exercise-induced angina",
+    "STSlope_Down": "whether the ST segment slope is downsloping",
+    "STSlope_Flat": "whether the ST segment slope is flat",
+    "STSlope_Up": "whether the ST segment slope is upsloping"
+}

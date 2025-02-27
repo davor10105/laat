@@ -1,0 +1,23 @@
+{
+    "#DatasetTask#": "Predict whether this patient's breast cancer will reoccur. Yes or no?",
+    "#DatasetClasses#": [
+        "no",
+        "yes"
+    ],
+    "Age": "The age of the patient at the time of diagnosis.",
+    "TumorSize": "The size of the detected tumor, usually measured in millimeters or centimeters.",
+    "INVNodes": "The number of axillary lymph nodes found to be involved.",
+    "NodeCaps": "Indicates whether the lymph nodes have capsular invasion (Yes/No).",
+    "MenopauseOver40": "Indicates if the patient is menopausal and over 40 years old.",
+    "MenopauseUnder40": "Indicates if the patient is menopausal but under 40 years old.",
+    "Premenopause": "Indicates if the patient has not yet reached menopause.",
+    "LeftBreast": "Indicates that the tumor is located in the left breast.",
+    "RightBreast": "Indicates that the tumor is located in the right breast.",
+    "LowerLeftBreastQuadrant": "Indicates that the tumor is in the lower left quadrant of the breast.",
+    "UpperLeftBreastQuadrant": "Indicates that the tumor is in the upper left quadrant of the breast.",
+    "LowerRightBreastQuadrant": "Indicates that the tumor is in the lower right quadrant of the breast.",
+    "UpperRightBreastQuadrant": "Indicates that the tumor is in the upper right quadrant of the breast.",
+    "CentralBreastQuadrant": "Indicates that the tumor is located in the central quadrant of the breast.",
+    "DegreeMalignancy": "The severity of the cancer, typically graded on a scale (e.g., 1-3) based on histological assessment.",
+    "Irradiated": "Indicates whether the patient has received radiation treatment (Yes/No)."
+}
