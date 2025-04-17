@@ -9,7 +9,7 @@
   </a>
 </p>
 
-Use LLMs as training regularizers for small models and significantly improve their generalization ability.
+Use LLMs as training regularizers for small models and significantly improve their generalization ability. Read more in our paper: [Large Language Models as Attribution Regularizers for Efficient Model Training](https://arxiv.org/abs/2502.20268)
 
 
 ## Quickstart 🚀
@@ -58,6 +58,21 @@ model = LAATLAATModel(
 
 # train the model
 model.train(X_train, y_train)
+```
+
+## Citation
+
+If you find this repository or the paper useful in your research, please cite us using the following BibTeX entry:
+```text
+@misc{vukadin2025largelanguagemodelsattribution,
+      title={Large Language Models as Attribution Regularizers for Efficient Model Training}, 
+      author={Davor Vukadin and Marin Šilić and Goran Delač},
+      year={2025},
+      eprint={2502.20268},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2502.20268}, 
+}
 ```
 
 ## Author
