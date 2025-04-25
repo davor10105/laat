@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Callable
 from pydantic import BaseModel
 
-from sklearn.metrics import f1_score, accuracy_score, roc_auc_score
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, recall_score, precision_score
 
 
 class LAATMetric(ABC, BaseModel):
@@ -26,6 +26,22 @@ class Accuracy(LAATMetric):
 class F1(LAATMetric):
     metric_name: str = "f1"
     metric_function: Callable = f1_score
+
+    def __call__(self, y_pred: np.array, y_proba: np.array, y_true: np.array) -> float:
+        return self.metric_function(y_true=y_true, y_pred=y_pred)
+
+
+class Precision(LAATMetric):
+    metric_name: str = "precision"
+    metric_function: Callable = precision_score
+
+    def __call__(self, y_pred: np.array, y_proba: np.array, y_true: np.array) -> float:
+        return self.metric_function(y_true=y_true, y_pred=y_pred)
+
+
+class Recall(LAATMetric):
+    metric_name: str = "recall"
+    metric_function: Callable = recall_score
 
     def __call__(self, y_pred: np.array, y_proba: np.array, y_true: np.array) -> float:
         return self.metric_function(y_true=y_true, y_pred=y_pred)

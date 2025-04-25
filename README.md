@@ -14,6 +14,8 @@ Use LLMs as training regularizers for small models and significantly improve the
 
 ## Quickstart 🚀
 
+You can quickly train a model on a specified dataset using LLM attribution guidance:
+
 ```python
 from laat.datasets import LAATDataset
 from laat.splitters import NShotSplitter
@@ -58,6 +60,22 @@ model = LAATLAATModel(
 
 # train the model
 model.train(X_train, y_train)
+```
+
+To train a model you need a **.csv** dataset, and a metadata **.json** file describing the task and listing the descriptions of all features. You can define a metadata file manually, or generate one automatically, by providing a dataset and the task description:
+
+```python
+from laat.datasets import LAATDataset
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(model="gpt-4.1-nano")
+
+LAATDataset.generate_metadata(
+    dataset_name="indian_liver",
+    dataset_task_description="Predict whether the patient has a liver disease. Yes or no?",
+    model=model,
+    data_root="laat/data",
+)
 ```
 
 ## Citation
