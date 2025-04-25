@@ -17,6 +17,7 @@ from laat.models.laat import (
     TorchLogisticRegression,
     TorchMLP,
     LAATUnweightedClassifier,
+    UpdateLAATClassifier,
     LAATFewshotLAATModel,
 )
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -44,7 +45,7 @@ from scipy.stats import uniform, loguniform
 from skorch.callbacks import EarlyStopping
 from skorch.classifier import NeuralNetBinaryClassifier
 from hpsklearn import HyperoptEstimator, mlp_regressor, mlp_classifier
-from laat.metrics import Accuracy, F1, ROCAUC
+from laat.metrics import Accuracy, F1, ROCAUC, DemographicParityRatio
 import numpy as np
 from functools import partial
 import random
@@ -56,12 +57,20 @@ from skorch.classifier import NeuralNetBinaryClassifier
 # featllm fail - "breast-ljubljana" "myocardial",
 # dataset_names = ["diabetes", "adult"]
 # dataset_names = ["electricity", "bank", "cdc-diabetes"]
-# dataset_names = ["diabetes", "breast-ljubljana", "myocardial", "cdc-diabetes"]
-dataset_names = ["cdc-diabetes"]
+dataset_names = [
+    # "diabetes",
+    # "breast-ljubljana",
+    # "myocardial",
+    # "cdc-diabetes",
+    # "contraceptive",
+    # "bodyfat",
+    "indian_liver",
+]  # ["diabetes", "breast-ljubljana", "myocardial", "cdc-diabetes"]
+# dataset_names = ["cdc-diabetes"]
 n_classes = 1
-nrepetitions = 10
+nrepetitions = 20
 shots = [0]
-metrics = [Accuracy(), F1(), ROCAUC()]
+metrics = [Accuracy(), F1(), ROCAUC()]  # , DemographicParityRatio()]
 seed = 69
 
 # model_kwargs = {
@@ -119,7 +128,7 @@ for dataset_name in dataset_names:
         ),
         LAATLAATModel(
             model_name=f"laat_llama-3.3-70b-versatile_mlp",
-            model_class=partial_class(LAATUnweightedClassifier, module=TorchMLP, **model_kwargs),
+            model_class=partial_class(UpdateLAATClassifier, module=TorchMLP, **model_kwargs),
             pandas_to_numpy_mapper=dataset.to_numpy,
             dataset=dataset,
             reasoning_llm=ChatGroq(model="llama-3.3-70b-versatile"),
@@ -129,7 +138,7 @@ for dataset_name in dataset_names:
         ),
         LAATLAATModel(
             model_name=f"laat_gemini-2.0-flash-lite-preview-02-05_mlp",
-            model_class=partial_class(LAATUnweightedClassifier, module=TorchMLP, **model_kwargs),
+            model_class=partial_class(UpdateLAATClassifier, module=TorchMLP, **model_kwargs),
             pandas_to_numpy_mapper=dataset.to_numpy,
             dataset=dataset,
             reasoning_llm=ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite-preview-02-05"),
@@ -139,7 +148,7 @@ for dataset_name in dataset_names:
         ),
         LAATLAATModel(
             model_name=f"laat_gpt-4o-mini_mlp",
-            model_class=partial_class(LAATUnweightedClassifier, module=TorchMLP, **model_kwargs),
+            model_class=partial_class(UpdateLAATClassifier, module=TorchMLP, **model_kwargs),
             pandas_to_numpy_mapper=dataset.to_numpy,
             dataset=dataset,
             reasoning_llm=ChatOpenAI(model="gpt-4o-mini"),
@@ -149,7 +158,7 @@ for dataset_name in dataset_names:
         ),
         LAATLAATModel(
             model_name=f"laat_llama-3.3-70b-versatile_lr",
-            model_class=partial_class(LAATUnweightedClassifier, module=TorchLogisticRegression, **model_kwargs),
+            model_class=partial_class(UpdateLAATClassifier, module=TorchLogisticRegression, **model_kwargs),
             pandas_to_numpy_mapper=dataset.to_numpy,
             dataset=dataset,
             reasoning_llm=ChatGroq(model="llama-3.3-70b-versatile"),
@@ -159,7 +168,7 @@ for dataset_name in dataset_names:
         ),
         LAATLAATModel(
             model_name=f"laat_gemini-2.0-flash-lite-preview-02-05_lr",
-            model_class=partial_class(LAATUnweightedClassifier, module=TorchLogisticRegression, **model_kwargs),
+            model_class=partial_class(UpdateLAATClassifier, module=TorchLogisticRegression, **model_kwargs),
             pandas_to_numpy_mapper=dataset.to_numpy,
             dataset=dataset,
             reasoning_llm=ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite-preview-02-05"),
@@ -169,7 +178,7 @@ for dataset_name in dataset_names:
         ),
         LAATLAATModel(
             model_name=f"laat_gpt-4o-mini_lr",
-            model_class=partial_class(LAATUnweightedClassifier, module=TorchLogisticRegression, **model_kwargs),
+            model_class=partial_class(UpdateLAATClassifier, module=TorchLogisticRegression, **model_kwargs),
             pandas_to_numpy_mapper=dataset.to_numpy,
             dataset=dataset,
             reasoning_llm=ChatOpenAI(model="gpt-4o-mini"),
@@ -180,7 +189,7 @@ for dataset_name in dataset_names:
         GridSearchCVLAATModel(
             model_name="lr",
             model_class=LogisticRegression,
-            param_grid={"C": [100, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5], "penalty": ["l1", "l2"]},
+            param_grid={"C": [100, 10, 1, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5], "penalty": ["l2"]},
             scoring="roc_auc",
             pandas_to_numpy_mapper=dataset.to_numpy,
         ),
@@ -242,10 +251,8 @@ for dataset_name in dataset_names:
 
         shot = int(0.8 * len(dataset.X))
         shot_logger = ShotLog(shot=shot)
-        for repetition in tqdm(
-            range(nrepetitions if "featllm" not in model.model_name else 10)
-        ):  # 10 repetitions for featllm because of cost
-            X_train, X_test, y_train, y_test = SkewedSplitter.split(
+        for repetition in tqdm(range(nrepetitions)):
+            X_train, X_test, y_train, y_test, sensitive_features = SkewedSplitter.split(
                 dataset_name=dataset_name, X=dataset.X, y=dataset.y, delta=0, train_size=0.8
             )
             model.train(
@@ -265,9 +272,18 @@ for dataset_name in dataset_names:
             preds = all_probas.argmax(-1)
             probas = all_probas[:, 1]
             for metric in metrics:
-                value = metric(
-                    y_pred=preds, y_proba=probas, y_true=dataset.to_numpy(y=y_test)
-                )  #  / (orig_metrics[metric_name] + 1e-9)
+                if isinstance(metric, DemographicParityRatio):
+                    value = metric(
+                        y_pred=preds,
+                        y_proba=probas,
+                        y_true=dataset.to_numpy(y=y_test),
+                        sensitive_features=sensitive_features,
+                    )
+                else:
+                    value = metric(
+                        y_pred=preds, y_proba=probas, y_true=dataset.to_numpy(y=y_test)
+                    )  #  / (orig_metrics[metric_name] + 1e-9)
+                # print(metric, value)
                 shot_logger.update(metric_update=Metric(name=metric.metric_name, repetitions=[value]))
             model.clear()
         model_logger.update(shot_logger)

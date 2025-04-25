@@ -1,0 +1,19 @@
+{
+    "#DatasetTask#": "Predict whether the patient has a liver disease. Yes or no?",
+    "#DatasetClasses#": [
+        "no",
+        "yes"
+    ],
+    "Age": "The age of the patient.",
+    "TotalBilirubin": "The total level of bilirubin in the blood, which is a yellow pigment produced during the breakdown of red blood cells.",
+    "DirectBilirubin": "The level of direct (conjugated) bilirubin in the blood, which is a form of bilirubin that has been processed by the liver.",
+    "AlkalinePhosphotase": "An enzyme found in the liver, bones, and other tissues; elevated levels may indicate liver or bone disorders.",
+    "AlamineAminotransferase": "An enzyme primarily found in the liver; high levels may indicate liver damage or disease.",
+    "AspartateAminotransferase": "An enzyme found in the liver, heart, and muscles; elevated levels may suggest liver disease or damage.",
+    "TotalProtiens": "The total amount of proteins in the blood, including albumin and globulins, which help in various bodily functions.",
+    "Albumin": "A protein made by the liver that helps maintain blood volume and transport substances throughout the body.",
+    "AlbuminandGlobulinRatio": "The ratio of albumin to globulin proteins in the blood, which can indicate liver function abnormalities.",
+    "Gender_Female": "The patient is of female gender.",
+    "Gender_Male": "The patient is of male gender.",
+    "Gender": "The gender of the patient."
+}

@@ -48,7 +48,7 @@ from scipy.stats import uniform, loguniform
 from skorch.callbacks import EarlyStopping
 from skorch.classifier import NeuralNetBinaryClassifier
 from hpsklearn import HyperoptEstimator, mlp_regressor, mlp_classifier
-from laat.metrics import Accuracy, F1, ROCAUC
+from laat.metrics import Accuracy, F1, ROCAUC, Precision, Recall
 import numpy as np
 from functools import partial
 import random
@@ -57,13 +57,27 @@ from types import SimpleNamespace
 from skorch.dataset import unpack_data
 from skorch.classifier import NeuralNetBinaryClassifier
 
+from langchain_community.callbacks import get_openai_callback
+
 # dataset_names = ["adult", "diabetes", "breast-ljubljana", "myocardial", "electricity", "bank", "cdc-diabetes"]
+# dataset_names = ["adult", "diabetes", "breast-ljubljana", "electricity", "bank", "cdc-diabetes", "myocardial"]
 # dataset_names = ["diabetes", "breast-ljubljana", "myocardial", "electricity", "bank", "cdc-diabetes"]
-dataset_names = ["diabetes", "breast-ljubljana", "myocardial", "electricity", "bank", "cdc-diabetes"]
+dataset_names = [
+    # "adult",
+    # "diabetes",
+    # "breast-ljubljana",
+    # "myocardial",
+    # "electricity",
+    "bank",
+    "cdc-diabetes",
+    "contraceptive",
+    "bodyfat",
+    "indian_liver",
+]
 n_classes = 1
-nrepetitions = 10
+nrepetitions = 1
 shots = [1, 5, 10]
-metrics = [Accuracy(), F1(), ROCAUC()]
+metrics = [Accuracy(), F1(), ROCAUC(), Precision(), Recall()]
 seed = 69
 
 # model_kwargs = {
@@ -88,21 +102,13 @@ model_kwargs = {
     "device": "cuda",
 }
 
-experiment_logger = ExperimentLogger("fewshot_sweep")
+all_token_counters = []
+experiment_logger = ExperimentLogger("token_count")
 for dataset_name in dataset_names:
     print(dataset_name)
     dataset = LAATDataset.load(dataset_name, "laat/data")
 
     models = [
-        # OriginalFeatLLMLAATModel(
-        #     model_name="featllm_gemini-1.5-flash",
-        #     model_class=partial_class(LogisticRegression, max_iter=1000),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.5),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     n_estimators=20,
-        # ),
         # OriginalFeatLLMLAATModel(
         #     model_name="featllm_gemini-2.0-flash-lite-preview-02-05",
         #     model_class=partial_class(LogisticRegression, max_iter=1000),
@@ -112,48 +118,19 @@ for dataset_name in dataset_names:
         #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
         #     n_estimators=20,
         # ),
-        # OriginalFeatLLMLAATModel(
-        #     model_name="featllm_gpt-4o-mini",
-        #     model_class=partial_class(LogisticRegression, max_iter=1000),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.5),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     n_estimators=20,
-        # ),
-        # LAATLAATModel(
-        #     model_name=f"laat_gemini-1.5-flash_mlp",
-        #     model_class=partial_class(LAATUnweightedClassifier, module=TorchMLP, **model_kwargs),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatGoogleGenerativeAI(model="gemini-1.5-flash"),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     gamma=100.0,
-        #     n_estimates=5,
-        # ),
-        # LAATLAATModel(
-        #     model_name=f"update_laat_llama-3.3-70b-versatile_mlp",
-        #     model_class=partial_class(UpdateLAATClassifier, module=TorchMLP, **model_kwargs),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatGroq(model="llama-3.3-70b-versatile"),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     gamma=100.0,
-        #     n_estimates=5,
-        # ),
-        # LAATLAATModel(
-        #     model_name=f"update_laat_gemini-2.0-flash-lite-preview-02-05_mlp",
-        #     model_class=partial_class(UpdateLAATClassifier, module=TorchMLP, **model_kwargs),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite-preview-02-05"),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     gamma=100.0,
-        #     n_estimates=5,
-        # ),
+        OriginalFeatLLMLAATModel(
+            model_name="featllm_gpt-4o-mini",
+            model_class=partial_class(LogisticRegression, max_iter=1000),
+            pandas_to_numpy_mapper=dataset.to_numpy,
+            dataset=dataset,
+            reasoning_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.5),
+            parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
+            n_estimators=20,
+            save_path="featllm_token_count",
+        ),
         # LAATLAATModel(
         #     model_name=f"laat_llama-3.3-70b-versatile_mlp",
-        #     model_class=partial_class(LAATUnweightedClassifier, module=TorchMLP, **model_kwargs),
+        #     model_class=partial_class(UpdateLAATClassifier, module=TorchMLP, **model_kwargs),
         #     pandas_to_numpy_mapper=dataset.to_numpy,
         #     dataset=dataset,
         #     reasoning_llm=ChatGroq(model="llama-3.3-70b-versatile"),
@@ -163,7 +140,7 @@ for dataset_name in dataset_names:
         # ),
         # LAATLAATModel(
         #     model_name=f"laat_gemini-2.0-flash-lite-preview-02-05_mlp",
-        #     model_class=partial_class(LAATUnweightedClassifier, module=TorchMLP, **model_kwargs),
+        #     model_class=partial_class(UpdateLAATClassifier, module=TorchMLP, **model_kwargs),
         #     pandas_to_numpy_mapper=dataset.to_numpy,
         #     dataset=dataset,
         #     reasoning_llm=ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite-preview-02-05"),
@@ -172,37 +149,7 @@ for dataset_name in dataset_names:
         #     n_estimates=5,
         # ),
         # LAATLAATModel(
-        #     model_name=f"laat_gpt-4o_mlp",
-        #     model_class=partial_class(LAATUnweightedClassifier, module=TorchMLP, **model_kwargs),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatOpenAI(model="gpt-4o"),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     gamma=100.0,
-        #     n_estimates=5,
-        # ),
-        LAATLAATModel(
-            model_name=f"update_laat_gpt-4o-mini_mlp",
-            model_class=partial_class(UpdateLAATClassifier, module=TorchMLP, **model_kwargs),
-            pandas_to_numpy_mapper=dataset.to_numpy,
-            dataset=dataset,
-            reasoning_llm=ChatOpenAI(model="gpt-4o-mini"),
-            parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-            gamma=100.0,
-            n_estimates=5,
-        ),
-        LAATLAATModel(
-            model_name=f"laat_gpt-4o-mini_mlp",
-            model_class=partial_class(LAATUnweightedClassifier, module=TorchMLP, **model_kwargs),
-            pandas_to_numpy_mapper=dataset.to_numpy,
-            dataset=dataset,
-            reasoning_llm=ChatOpenAI(model="gpt-4o-mini"),
-            parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-            gamma=100.0,
-            n_estimates=5,
-        ),
-        # LAATLAATModel(
-        #     model_name=f"update_laat_gpt-4o-mini_mlp_stop",
+        #     model_name=f"laat_gpt-4o-mini_mlp",
         #     model_class=partial_class(UpdateLAATClassifier, module=TorchMLP, **model_kwargs),
         #     pandas_to_numpy_mapper=dataset.to_numpy,
         #     dataset=dataset,
@@ -212,38 +159,8 @@ for dataset_name in dataset_names:
         #     n_estimates=5,
         # ),
         # LAATLAATModel(
-        #     model_name=f"laat_gemini-1.5-flash_lr",
-        #     model_class=partial_class(LAATUnweightedClassifier, module=TorchLogisticRegression, **model_kwargs),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatGoogleGenerativeAI(model="gemini-1.5-flash"),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     gamma=100.0,
-        #     n_estimates=5,
-        # ),
-        # LAATLAATModel(
-        #     model_name=f"update_laat_llama-3.3-70b-versatile_lr",
-        #     model_class=partial_class(UpdateLAATClassifier, module=TorchLogisticRegression, **model_kwargs),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatGroq(model="llama-3.3-70b-versatile"),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     gamma=100.0,
-        #     n_estimates=5,
-        # ),
-        # LAATLAATModel(
-        #     model_name=f"update_laat_gemini-2.0-flash-lite-preview-02-05_lr",
-        #     model_class=partial_class(UpdateLAATClassifier, module=TorchLogisticRegression, **model_kwargs),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite-preview-02-05"),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     gamma=100.0,
-        #     n_estimates=5,
-        # ),
-        # LAATLAATModel(
         #     model_name=f"laat_llama-3.3-70b-versatile_lr",
-        #     model_class=partial_class(LAATUnweightedClassifier, module=TorchLogisticRegression, **model_kwargs),
+        #     model_class=partial_class(UpdateLAATClassifier, module=TorchLogisticRegression, **model_kwargs),
         #     pandas_to_numpy_mapper=dataset.to_numpy,
         #     dataset=dataset,
         #     reasoning_llm=ChatGroq(model="llama-3.3-70b-versatile"),
@@ -253,7 +170,7 @@ for dataset_name in dataset_names:
         # ),
         # LAATLAATModel(
         #     model_name=f"laat_gemini-2.0-flash-lite-preview-02-05_lr",
-        #     model_class=partial_class(LAATUnweightedClassifier, module=TorchLogisticRegression, **model_kwargs),
+        #     model_class=partial_class(UpdateLAATClassifier, module=TorchLogisticRegression, **model_kwargs),
         #     pandas_to_numpy_mapper=dataset.to_numpy,
         #     dataset=dataset,
         #     reasoning_llm=ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite-preview-02-05"),
@@ -261,18 +178,8 @@ for dataset_name in dataset_names:
         #     gamma=100.0,
         #     n_estimates=5,
         # ),
-        # LAATLAATModel(
-        #     model_name=f"laat_gpt-4o_lr",
-        #     model_class=partial_class(LAATUnweightedClassifier, module=TorchLogisticRegression, **model_kwargs),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatOpenAI(model="gpt-4o"),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     gamma=100.0,
-        #     n_estimates=5,
-        # ),
         LAATLAATModel(
-            model_name=f"update_laat_gpt-4o-mini_lr",
+            model_name=f"laat_gpt-4o-mini_lr",
             model_class=partial_class(UpdateLAATClassifier, module=TorchLogisticRegression, **model_kwargs),
             pandas_to_numpy_mapper=dataset.to_numpy,
             dataset=dataset,
@@ -280,27 +187,8 @@ for dataset_name in dataset_names:
             parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
             gamma=100.0,
             n_estimates=5,
+            save_path="laat_token_count",
         ),
-        LAATLAATModel(
-            model_name=f"laat_gpt-4o-mini_lr",
-            model_class=partial_class(LAATUnweightedClassifier, module=TorchLogisticRegression, **model_kwargs),
-            pandas_to_numpy_mapper=dataset.to_numpy,
-            dataset=dataset,
-            reasoning_llm=ChatOpenAI(model="gpt-4o-mini"),
-            parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-            gamma=100.0,
-            n_estimates=5,
-        ),
-        # LAATLAATModel(
-        #     model_name=f"laat_gpt-4o-mini_lr_stop",
-        #     model_class=partial_class(UpdateLAATClassifier, module=TorchLogisticRegression, **model_kwargs),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        #     dataset=dataset,
-        #     reasoning_llm=ChatOpenAI(model="gpt-4o-mini"),
-        #     parsing_llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0),
-        #     gamma=100.0,
-        #     n_estimates=5,
-        # ),
         # TabPFNLAATModel(
         #     model_name="tabfpn",
         #     model_class=partial_class(TabPFNClassifier, device="cuda"),
@@ -357,57 +245,47 @@ for dataset_name in dataset_names:
         #         "depth": [2, 4, 6, 8, 10],
         #     },
         # ),
-        # SkorchLAATModel(
-        #     model_name="saint",
-        #     model_class=partial_class(
-        #         SAINT,
-        #         params=dict(dim=32, depth=6, heads=8, dropout=0.1),
-        #         args=SimpleNamespace(
-        #             use_gpu=True,
-        #             batch_size=128,
-        #             val_batch_size=256,
-        #             data_parallel=False,
-        #             model_id="saint",
-        #             cat_idx=[],
-        #             num_features=dataset.X.shape[-1],
-        #             num_classes=n_classes,
-        #             objective="binary" if n_classes == 1 else "classification",
-        #             lr=0.00003,
-        #             epochs=100,
-        #         ),
-        #     ),
-        #     pandas_to_numpy_mapper=dataset.to_numpy,
-        # ),
     ]
     # better generalization with small amounts of data
     # with open("FeatLLM/train_logs/diabetes2502211835.pkl", "rb") as f:
     #     meta_logger = pickle.load(f)
     meta_logger = NShotLogger(f"{dataset.dataset_name}")
+    token_counter = {}
     for model in models:
         print(model.model_name)
         model_logger = NShotLog(model_name=model.model_name)
         np.random.seed(seed)
         torch.manual_seed(seed)
         random.seed(seed)
+
         for shot in shots:
             shot_logger = ShotLog(shot=shot)
             for repetition in tqdm(
-                range(nrepetitions if "featllm" not in model.model_name else 10)
+                range(nrepetitions)  # if "featllm" not in model.model_name else 10)
             ):  # 10 repetitions for featllm because of cost
                 X_train, X_test, y_train, y_test = NShotSplitter.split(X=dataset.X, y=dataset.y, shot=shot)
 
-                model.train(
-                    X_train,
-                    y_train,
-                    TrainRunInfo(
-                        shot=shot,
-                        repetition=repetition,
-                        kwargs={
-                            "X_test": X_test,
-                            "y_test": y_test,
-                        },
-                    ),
-                )
+                with get_openai_callback() as cb:
+                    model.train(
+                        X_train,
+                        y_train,
+                        TrainRunInfo(
+                            shot=shot,
+                            repetition=repetition,
+                            kwargs={
+                                "X_test": X_test,
+                                "y_test": y_test,
+                            },
+                        ),
+                    )
+
+                if model.model_name not in token_counter:
+                    token_counter[model.model_name] = {}
+                if shot not in token_counter[model.model_name]:
+                    token_counter[model.model_name][shot] = {"input": [], "output": []}
+
+                token_counter[model.model_name][shot]["input"].append(cb.prompt_tokens)
+                token_counter[model.model_name][shot]["output"].append(cb.completion_tokens)
 
                 all_probas = model.predict_proba(X_test)
                 preds = all_probas.argmax(-1)
@@ -421,8 +299,12 @@ for dataset_name in dataset_names:
                 model.clear()
             model_logger.update(shot_logger)
         meta_logger.update(nshot_log_update=model_logger)
-    meta_logger.plot()
-    meta_logger.save()
+    # meta_logger.plot()
+    # meta_logger.save()
 
     experiment_logger.update(meta_logger)
-    experiment_logger.save()
+    # experiment_logger.save()
+
+    all_token_counters.append(token_counter)
+    with open("token_count.pickle", "wb") as f:
+        pickle.dump(all_token_counters, f)

@@ -85,63 +85,6 @@ class LAATComparisonClassifier(NeuralNetBinaryClassifier):
         }
 
 
-class LAATMulticlassClassifier(NeuralNetClassifier):
-    def __init__(self, *args, importance_scores: np.array, gamma: float, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.importance_scores = torch.from_numpy(importance_scores).float()
-        # self.importance_scores = self.importance_scores # - self.importance_scores.mean(dim=0, keepdims=True)[0]
-        self.gamma = gamma
-
-    def __str__(self):
-        return f"{self.__class__.__name__}_{self.gamma}"
-
-    def _get_attribution_loss(self, Xi, yi, y_pred, cls_loss):
-        batch_size = Xi.shape[0]
-        batch_selector = torch.arange(batch_size).to(Xi.device)
-        attributions = (
-            torch.autograd.grad(y_pred[batch_selector, yi].mean(), Xi, create_graph=True, retain_graph=True)[0] * Xi
-        )
-        llm_importance_scores = F.normalize(
-            self.importance_scores[None].repeat(batch_size, 1, 1).to(attributions.device)[batch_selector, yi] * Xi,
-            dim=-1,
-        ) * attributions.norm(dim=-1, keepdim=True)
-        att_loss = nn.MSELoss()(F.normalize(attributions, dim=-1), F.normalize(llm_importance_scores, dim=-1).detach())
-        return att_loss
-
-    def train_step_single(self, batch, **fit_params):
-        self._set_training(True)
-        Xi, yi = unpack_data(batch)
-        Xi.requires_grad = True
-        y_pred = self.infer(Xi, **fit_params)
-        loss = self.get_loss(y_pred, yi, X=Xi, training=True)
-        att_loss = self._get_attribution_loss(Xi, yi, y_pred, loss)
-
-        attribution_factor = att_loss.item() / (att_loss.item() + loss.item())
-        loss += self.gamma / (attribution_factor + 1e-9) * att_loss
-        loss.backward()
-
-        return {
-            "loss": loss,
-            "y_pred": y_pred,
-        }
-
-    def validation_step(self, batch, **fit_params):
-        self._set_training(False)
-        Xi, yi = unpack_data(batch)
-        Xi.requires_grad = True
-        y_pred = self.infer(Xi, **fit_params)
-        loss = self.get_loss(y_pred, yi, X=Xi, training=False)
-        att_loss = self._get_attribution_loss(Xi, yi, y_pred, loss)
-        attribution_factor = att_loss.item() / (att_loss.item() + loss.item())
-        loss += self.gamma / (attribution_factor + 1e-9) * att_loss
-
-        return {
-            "loss": loss,
-            "y_pred": y_pred,
-        }
-
-
 class LAATUnweightedClassifier(NeuralNetBinaryClassifier):
     def __init__(self, importance_scores: np.array, gamma: float, attribution_method: str = "inputxgradient", **kwargs):
         super().__init__(**kwargs)
@@ -367,6 +310,7 @@ class LAATUtilities:
     @staticmethod
     def class_importance_prompts(dataset: LAATDataset) -> list[str]:
         labels_to_query = dataset.feature_descriptions["#DatasetClasses#"]
+        # if it's binary classification, take the last class
         if len(labels_to_query) == 2:
             labels_to_query = labels_to_query[-1:]
         label_prompts = []

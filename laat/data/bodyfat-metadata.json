@@ -1,0 +1,19 @@
+{
+    "#DatasetTask#": "Predict whether the person has above average bodyfat percentage. Yes or no?",
+    "#DatasetClasses#": [
+        "no",
+        "yes"
+    ],
+    "Age": "The person's age in years.",
+    "Weight": "The person's weight in kilograms.",
+    "Height": "The person's height in centimeters.",
+    "Neck": "Circumference of the neck in centimeters.",
+    "Chest": "Circumference of the chest at nipple level in centimeters.",
+    "Abdomen": "Circumference of the abdomen at the umbilicus (belly button) level in centimeters.",
+    "Hip": "Circumference of the hips at the widest point in centimeters.",
+    "Thigh": "Circumference of the thigh at the proximal end, just below the gluteal fold, in centimeters.",
+    "Ankle": "Circumference of the ankle at the narrowest point in centimeters.",
+    "Biceps": "Circumference of the biceps, flexed, in centimeters.",
+    "Forearm": "Circumference of the forearm at the widest point in centimeters.",
+    "Wrist": "Circumference of the wrist at the distal styloid process in centimeters."
+}
